@@ -2,7 +2,7 @@ Package: fnets
 Type: Package
 Title: Factor-Adjusted Network Estimation and Forecasting for
         High-Dimensional Time Series
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: c(
     person("Matteo", "Barigozzi", email = "matteo.barigozzi@unibo.it", role = "aut"),
     person("Haeran", "Cho", email = "haeran.cho@bristol.ac.uk", role = c("cre", "aut")),
@@ -11,7 +11,7 @@ Maintainer: Haeran Cho <haeran.cho@bristol.ac.uk>
 Description: Implements methods for network estimation and forecasting of high-dimensional time series 
     exhibiting strong serial and cross-sectional correlations under a factor-adjusted vector autoregressive model.
     See Barigozzi, Cho and Owens (2022) <arXiv:2201.06110> for further descriptions of FNETS methodology and 
-    Owens, Cho and Barigozzi (2023) <https://drive.google.com/file/d/1Rw-xgpijF8ZIBUzjIU9emr-ucAvAhKL4/view?usp=sharing> accompanying the R package.
+    Owens, Cho and Barigozzi (2023) <arXiv:2301.11675> accompanying the R package.
 Depends: R (>= 4.1.0)
 Imports: lpSolve, parallel, doParallel, foreach, MASS, fields, igraph,
         RColorBrewer
@@ -21,9 +21,9 @@ RoxygenNote: 7.1.2
 Suggests: testthat (>= 3.0.0)
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2023-01-25 10:09:51 UTC; do16317
+Packaged: 2023-01-30 14:15:41 UTC; do16317
 Author: Matteo Barigozzi [aut],
   Haeran Cho [cre, aut],
   Dom Owens [aut]
 Repository: CRAN
-Date/Publication: 2023-01-26 18:40:02 UTC
+Date/Publication: 2023-01-31 17:00:08 UTC
