@@ -6,7 +6,7 @@
 #' @param q number of unrestricted factors
 #' @param heavy if \code{heavy = FALSE}, common shocks are generated from \code{rnorm} whereas if \code{heavy = TRUE}, from \code{rt} with \code{df = 5} and then scaled by \code{sqrt(3 / 5)}
 #' @return a list containing
-#' \item{data}{ generated series}
+#' \item{data}{ time series matrix with \code{n} rows and \code{p} columns }
 #' \item{q}{ number of factors}
 #' @references Barigozzi, M., Cho, H. & Owens, D. (2022) FNETS: Factor-adjusted network estimation and forecasting for high-dimensional time series. arXiv preprint arXiv:2201.06110
 #' @references Owens, D., Cho, H. & Barigozzi, M. (2022) fnets: An R Package for Network Estimation and Forecasting via Factor-Adjusted VAR Modelling. arXiv preprint arXiv:2301.11675.
@@ -15,14 +15,14 @@
 #' @importFrom stats rnorm runif rt
 #' @export
 sim.unrestricted <- function(n, p, q = 2, heavy = FALSE) {
+  n <- posint(n)
+  p <- posint(p)
+  q <- posint(q)
   trunc.lags <- min(20, round(n / log(n)))
   chi <- matrix(0, p, n)
-  if(!heavy) {
-    uu <- matrix(rnorm((n + trunc.lags) * q), ncol = q)
-  } else {
-    uu <-
-      matrix(rt((n + trunc.lags) * q, df = 5), ncol = q) * sqrt(3 / 5)
-  }
+  ifelse(!heavy, uu <- matrix(rnorm((n + trunc.lags) * q), ncol = q),
+         uu <-matrix(rt((n + trunc.lags) * q, df = 5), ncol = q) * sqrt(3 / 5))
+
   a <- matrix(runif(p * q,-1, 1), ncol = q)
   alpha <- matrix(runif(p * q,-.8, .8), ncol = q)
   for (ii in 1:p) {
@@ -45,7 +45,7 @@ sim.unrestricted <- function(n, p, q = 2, heavy = FALSE) {
 #' @param q number of unrestricted factors; number of restricted factors is given by \code{2 * q}
 #' @param heavy if \code{heavy = FALSE}, common shocks are generated from \code{rnorm} whereas if \code{heavy = TRUE}, from \code{rt} with \code{df = 5} and then scaled by \code{sqrt(3 / 5)}
 #' @return a list containing
-#' \item{data}{ generated series}
+#' \item{data}{ time series matrix with \code{n} rows and \code{p} columns }
 #' \item{q}{ number of factors}
 #' \item{r}{ number of restricted factors}
 #' @references Barigozzi, M., Cho, H. & Owens, D. (2022) FNETS: Factor-adjusted network estimation and forecasting for high-dimensional time series.
@@ -55,14 +55,14 @@ sim.unrestricted <- function(n, p, q = 2, heavy = FALSE) {
 #' @importFrom stats rnorm runif rt
 #' @export
 sim.restricted <- function(n, p, q = 2, heavy = FALSE) {
+  n <- posint(n)
+  p <- posint(p)
+  q <- posint(q)
   lags <- 1
   r <- q * (lags + 1)
   burnin <- 100
-  if(!heavy) {
-    uu <- matrix(rnorm((n + burnin) * q), nrow = q)
-  } else {
-    uu <- matrix(rt((n + burnin) * q, df = 5), nrow = q) * sqrt(3 / 5)
-  }
+  ifelse(!heavy, uu <- matrix(rnorm((n + burnin) * q), nrow = q),
+    uu <- matrix(rt((n + burnin) * q, df = 5), nrow = q) * sqrt(3 / 5))
   D0 <- matrix(runif(q^2, 0, .3), nrow = q)
   diag(D0) <- runif(q, .5, .8)
   D <- 0.7 * D0 / norm(D0, type = "2")
@@ -87,7 +87,7 @@ sim.restricted <- function(n, p, q = 2, heavy = FALSE) {
 #' @param Gamma innovation covariance matrix; ignored if \code{heavy = TRUE}
 #' @param heavy if \code{heavy = FALSE}, common shocks are generated from \code{rnorm} whereas if \code{heavy = TRUE}, from \code{rt} with \code{df = 5} and then scaled by \code{sqrt(3 / 5)}
 #' @return a list containing
-#' \item{data}{ generated series}
+#' \item{data}{ time series matrix with \code{n} rows and \code{p} columns }
 #' \item{A}{ transition matrix}
 #' \item{Gamma}{ innovation covariance matrix}
 #' @references Barigozzi, M., Cho, H. & Owens, D. (2022) FNETS: Factor-adjusted network estimation and forecasting for high-dimensional time series.
@@ -101,18 +101,15 @@ sim.var <- function(n,
                     p,
                     Gamma = diag(1, p),
                     heavy = FALSE) {
+  n <- posint(n)
+  p <- posint(p)
   burnin <- 100
   prob <- 1 / p
 
-  if(!heavy) {
-    if(identical(Gamma, diag(1, p))) {
-      xi <- matrix(rnorm((n + burnin) * p), nrow = p)
-    } else {
-      xi <- t(MASS::mvrnorm(n + burnin, mu = rep(0, p), Sigma = Gamma))
-    }
-  } else {
-    xi <- matrix(rt((n + burnin) * p, df = 5), nrow = p) * sqrt(3 / 5)
-  }
+  ifelse(!heavy,
+    ifelse(identical(Gamma, diag(1, p)), xi <- matrix(rnorm((n + burnin) * p), nrow = p),
+           xi <- t(MASS::mvrnorm(n + burnin, mu = rep(0, p), Sigma = Gamma))),
+    xi <- matrix(rt((n + burnin) * p, df = 5), nrow = p) * sqrt(3 / 5))
 
   A <- matrix(0, p, p)
   index <- sample(c(0, 1), p^2, TRUE, prob = c(1 - prob, prob))

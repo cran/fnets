@@ -3,17 +3,15 @@
 #' from the VAR parameter estimates and the inverse of innovation covariance matrix obtained via constrained \code{l1}-minimisation.
 #' @details See Barigozzi, Cho and Owens (2022) for further details, and Cai, Liu and Zhou (2016) for further details on the adaptive estimation procedure.
 #' @param object \code{fnets} object
-#' @param x input time series matrix; with each row representing a variable
-#' @param eta regularisation parameter; if \code{eta = NULL}, it is selected by cross validation
+#' @param eta \code{l1}-regularisation parameter; if \code{eta = NULL}, it is selected by cross validation
 #' @param tuning.args a list specifying arguments for the cross validation procedure
 #' for selecting the tuning parameter involved in long-run partial correlation matrix estimation. It contains:
 #' \itemize{
 #'    \item{\code{n.folds}}{ positive integer number of folds}
 #'    \item{\code{path.length}}{ positive integer number of regularisation parameter values to consider; a sequence is generated automatically based in this value}
-#'    \item{\code{do.plot}}{ whether to plot the output of the cross validation step, and if \code{do.threshold = TRUE}, plot the thresholding output}
 #' }
 #' @param lrpc.adaptive whether to use the adaptive estimation procedure
-#' @param eta.adaptive regularisation parameter for Step 1 of the adaptive estimation procedure; if \code{eta.adaptive = NULL}, defaults to \code{2 * sqrt(log(dim(x)[1])/dim(x)[2])}
+#' @param eta.adaptive \code{l1}-regularisation parameter for Step 1 of the adaptive estimation procedure; if \code{eta.adaptive = NULL}, the default choice is \code{2 * sqrt(log(dim(x)[1])/dim(x)[2])}
 #' @param do.correct whether to correct for any negative entries in the diagonals of the inverse of long-run covariance matrix
 #' @param do.threshold whether to perform adaptive thresholding of \code{Delta} and \code{Omega} parameter estimators with \link[fnets]{threshold}
 #' @param n.cores number of cores to use for parallel computing, see \link[parallel]{makePSOCKcluster}
@@ -22,7 +20,7 @@
 #' \item{Omega}{ estimated inverse of the long-run covariance matrix}
 #' \item{pc}{ estimated innovation partial correlation matrix}
 #' \item{lrpc}{ estimated long-run partial correlation matrix}
-#' \item{eta}{ regularisation parameter}
+#' \item{eta}{ \code{l1}-regularisation parameter}
 #' \item{lrpc.adaptive}{ input argument }
 #' @references Barigozzi, M., Cho, H. & Owens, D. (2022) FNETS: Factor-adjusted network estimation and forecasting for high-dimensional time series. arXiv preprint arXiv:2201.06110.
 #' @references Cai, T. T., Liu, W., & Zhou, H. H. (2016) Estimating sparse precision matrix: Optimal rates of convergence and adaptive estimation. The Annals of Statistics, 44(2), 455-488.
@@ -35,35 +33,44 @@
 #' common <- sim.unrestricted(n, p)
 #' idio <- sim.var(n, p)
 #' x <- common$data + idio$data
-#' out <- fnets(x, q = NULL, var.method = "lasso", do.lrpc = FALSE, var.args = list(n.cores = 2))
-#' plrpc <- par.lrpc(out, x,
-#' tuning.args = list(n.folds = 1, path.length = 10, do.plot = TRUE),  n.cores = 2)
+#' out <- fnets(x, do.lrpc = FALSE, var.args = list(n.cores = 2))
+#' plrpc <- par.lrpc(out, n.cores = 2)
 #' out$lrpc <- plrpc
 #' out$do.lrpc <- TRUE
-#' plot(out, type = "pc", display = "network", threshold = .05)
-#' plot(out, type = "lrpc", display = "heatmap", threshold = .05)
+#' plot(out, type = "pc", display = "network")
+#' plot(out, type = "lrpc", display = "heatmap")
 #' }
 #' @importFrom parallel detectCores
 #' @export
 par.lrpc <- function(object,
-                     x,
                      eta = NULL,
                      tuning.args = list(n.folds = 1,
-                                        path.length = 10,
-                                        do.plot = FALSE),
+                                        path.length = 10),
                      lrpc.adaptive = FALSE,
                      eta.adaptive = NULL,
                      do.correct = TRUE,
                      do.threshold = FALSE,
                      n.cores = min(parallel::detectCores() - 1, 3)) {
+  is.var <- FALSE
+  p <- dim(object$acv$Gamma_x)[1]
+  if(is.null(p)) {
+    p <- dim(object$beta)[2]
+    is.var <- TRUE
+  }
+  x <- as.matrix(attr(object, "args")$x)
   xx <- x - object$mean.x
-  p <- dim(x)[1]
   n <- dim(x)[2]
 
   tuning.args <- check.list.arg(tuning.args)
+  n.cores <- posint(n.cores)
 
-  GG <- object$idio.var$Gamma
-  A <- t(object$idio.var$beta)
+  if(!is.var){
+    GG <- object$idio.var$Gamma
+    A <- t(object$idio.var$beta)
+  } else {
+    GG <- object$Gamma
+    A <- t(object$beta)
+  }
   d <- dim(A)[2] / p
 
   A1 <- diag(1, p)
@@ -83,10 +90,10 @@ par.lrpc <- function(object,
       n.cores = n.cores,
       lrpc.adaptive = lrpc.adaptive,
       eta.adaptive = eta.adaptive,
-      do.plot = tuning.args$do.plot
+      is.var = is.var
     )
     eta <- dcv$eta
-  }
+  } else eta <- max(0, eta)
   if (lrpc.adaptive) {
     if (is.null(eta.adaptive)) {
       eta.adaptive <- 2 * sqrt(log(p) / n)
@@ -109,14 +116,21 @@ par.lrpc <- function(object,
       n.cores = n.cores
     )$DD
   }
-  if(do.threshold)
-    Delta <- threshold(Delta, do.plot = tuning.args$do.plot)$thr.mat
+  if(do.threshold){
+    dd <- diag(Delta)
+    Delta <- threshold(Delta)$thr.mat
+    diag(Delta) <- dd
+  }
   Omega <- 2 * pi * t(A1) %*% Delta %*% A1
   if (do.correct)
-    Omega <- correct.diag(Re(object$spec$Sigma_i[, , 1]), Omega)
-  if(do.threshold)
-    Omega <- threshold(Omega, do.plot = tuning.args$do.plot)$thr.mat
-  pc <- -t(t(Delta) / sqrt(diag(Delta))) / sqrt(diag(Delta))
+    if(!is.null(object$spec$Sigma_i))
+      Omega <- correct.diag(Re(object$spec$Sigma_i[, , 1]), Omega)
+  if(do.threshold){
+    dd <- diag(Omega)
+    Omega <- threshold(Omega)$thr.mat
+    diag(Omega) <- dd
+  }
+  pc <- -t(t(Delta) / sqrt(abs(diag(Delta)))) / sqrt(abs(diag(Delta)))
   lrpc <- -t(t(Omega) / sqrt(diag(Omega))) / sqrt(diag(Omega))
   out <-
     list(
@@ -127,7 +141,7 @@ par.lrpc <- function(object,
       eta = eta,
       lrpc.adaptive = lrpc.adaptive
     )
-
+  attr(out, "data") <- dcv
   return(out)
 }
 
@@ -146,7 +160,7 @@ direct.cv <-
            n.cores = min(parallel::detectCores() - 1, 3),
            lrpc.adaptive = FALSE,
            eta.adaptive = NULL,
-           do.plot = FALSE) {
+           is.var = FALSE) {
     n <- ncol(xx)
     p <- nrow(xx)
 
@@ -162,14 +176,11 @@ direct.cv <-
         )), digits = 10)
     }
     if (target == "acv") {
-      A <- t(object$idio.var$beta)
+      ifelse(is.var, A <- t(object$beta), A <- t(object$idio.var$beta))
       d <- dim(A)[2] / p
-      GG <- object$idio.var$Gamma
+      ifelse(is.var, GG <- object$Gamma, GG <- object$idio.var$Gamma)
       eta.max <- max(abs(GG))
-      if (lrpc.adaptive)
-        eta.max.2 <- 2 * sqrt(log(p) / n)
-      else
-        eta.max.2 <- eta.max
+      ifelse(lrpc.adaptive, eta.max.2 <- 2 * sqrt(log(p) / n), eta.max.2 <- eta.max)
       eta.path <-
         round(exp(seq(
           log(eta.max.2), log(eta.max * .01), length.out = path.length
@@ -236,21 +247,6 @@ direct.cv <-
     }
 
     eta.min <- eta.path[which.min(cv.err)]
-
-    if (do.plot) {
-      plot(
-        eta.path,
-        cv.err,
-        type = "b",
-        col = 2,
-        pch = 2,
-        log = "x",
-        xlab = "eta (log scale)",
-        ylab = "CV error",
-        main = "CV for (LR)PC matrix estimation"
-      )
-      abline(v = eta.min)
-    }
 
     out <- list(eta = eta.min,
                 cv.error = cv.err,

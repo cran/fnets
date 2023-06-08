@@ -2,33 +2,48 @@
 % Please edit documentation in R/idio.R
 \name{threshold}
 \alias{threshold}
-\title{Edge selection for VAR parameter, inverse innovation covariance, and long-run partial correlation matrices}
+\title{Threshold the entries of the input matrix at a data-driven level}
 \usage{
-threshold(mat, path.length = 500, do.plot = FALSE)
+threshold(mat, path.length = 500)
 }
 \arguments{
 \item{mat}{input parameter matrix}
 
 \item{path.length}{number of candidate thresholds}
-
-\item{do.plot}{whether to plot thresholding output}
 }
 \value{
-a list which contains the following fields:
+an S3 object of class \code{threshold}, which contains the following fields:
 \item{threshold}{ data-driven threshold}
 \item{thr.mat}{ thresholded input matrix}
 }
 \description{
-Threshold the entries of the input matrix at a data-driven level to perform edge selection
+Threshold the entries of the input matrix at a data-driven level.
+This can be used to perform edge selection for VAR parameter, inverse innovation covariance, and long-run partial correlation networks.
 }
 \details{
 See Liu, Zhang, and Liu (2021) for more information on the threshold selection process
 }
 \examples{
-\donttest{
+\dontrun{
+library(fnets)
+
 set.seed(123)
-A <- diag(.7, 50) + rnorm(50^2, 0, .1)
-threshold.A <- threshold(A)
+n <- 500
+p <- 20
+common <- sim.unrestricted(n, p)
+idio <- sim.var(n, p)
+x <- common$data + idio$data
+out <- fnets(x,
+   var.args = list(n.cores = 2)
+)
+# Granger-causal network
+th1 <- threshold(out$idio.var$beta)
+plot(th1)
+print(th1)
+# Partial correlations
+th2 <- threshold(out$lrpc$pc)
+# Long-run partial correlations
+th3 <- threshold(out$lrpc$lrpc)
 }
 }
 \references{
@@ -37,4 +52,7 @@ Barigozzi, M., Cho, H. & Owens, D. (2022) FNETS: Factor-adjusted network analysi
 Liu, B., Zhang, X. & Liu, Y. (2021) Simultaneous Change Point Inference and Structure Recovery for High Dimensional Gaussian Graphical Models. Journal of Machine Learning Research, 22(274), 1--62.
 
 Owens, D., Cho, H. & Barigozzi, M. (2022) fnets: An R Package for Network Estimation and Forecasting via Factor-Adjusted VAR Modelling. arXiv preprint arXiv:2301.11675.
+}
+\seealso{
+\link[fnets]{plot.threshold}, \link[fnets]{print.threshold}
 }

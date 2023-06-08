@@ -11,7 +11,7 @@ fnets.var(
   lambda = NULL,
   var.order = 1,
   tuning.args = list(tuning = c("cv", "bic"), n.folds = 1, penalty = NULL, path.length
-    = 10, do.plot = FALSE),
+    = 10),
   do.threshold = FALSE,
   n.iter = NULL,
   tol = 0,
@@ -19,7 +19,7 @@ fnets.var(
 )
 }
 \arguments{
-\item{x}{input time series matrix, with each row representing a variable}
+\item{x}{input time series matrix, with each row representing a variable and each column containing the observations at a given time}
 
 \item{center}{whether to de-mean the input \code{x} row-wise}
 
@@ -29,7 +29,7 @@ fnets.var(
    \item{\code{"ds"}}{ Dantzig Selector-type constrained \code{l1}-minimisation}
 }}
 
-\item{lambda}{regularisation parameter; if \code{lambda = NULL}, \code{tuning} is employed to select the parameter}
+\item{lambda}{\code{l1}-regularisation parameter; if \code{lambda = NULL}, \code{tuning} is employed to select the parameter}
 
 \item{var.order}{order of the VAR process; if a vector of integers is supplied, the order is chosen via \code{tuning}}
 
@@ -44,7 +44,6 @@ for selecting the regularisation parameter (and VAR order). It contains:
    \item{\code{n.folds}}{ if \code{tuning = "cv"}, positive integer number of folds}
    \item{\code{penalty}}{ if \code{tuning = "bic"}, penalty multiplier between 0 and 1; if \code{penalty = NULL}, it is set to \code{1/(1+exp(dim(x)[1])/dim(x)[2]))}} by default
    \item{\code{path.length}}{ positive integer number of regularisation parameter values to consider; a sequence is generated automatically based in this value}
-   \item{\code{do.plot}}{ whether to plot the output of the cross validation step}
 }}
 
 \item{do.threshold}{whether to perform adaptive thresholding of VAR parameter estimator with \link[fnets]{threshold}}
@@ -59,7 +58,7 @@ for selecting the regularisation parameter (and VAR order). It contains:
 a list which contains the following fields:
 \item{beta}{ estimate of VAR parameter matrix; each column contains parameter estimates for the regression model for a given variable}
 \item{Gamma}{ estimate of the innovation covariance matrix}
-\item{lambda}{ regularisation parameter}
+\item{lambda}{ \code{l1}-regularisation parameter}
 \item{var.order}{ VAR order}
 \item{mean.x}{ if \code{center = TRUE}, returns a vector containing row-wise sample means of \code{x}; if \code{center = FALSE}, returns a vector of zeros}
 }
@@ -80,11 +79,8 @@ idio <- sim.var(n, p)
 x <- idio$data
 
 fv <- fnets.var(x,
-  center = TRUE, method = "lasso", var.order = 1,
-  tuning.args = list(tuning = "cv", n.folds = 1, path.length = 10, do.plot = TRUE),
   n.cores = 2
 )
-norm(fv$beta - t(idio$A), "F") / norm(t(idio$A), "F")
 }
 \references{
 Barigozzi, M., Cho, H. & Owens, D. (2022) FNETS: Factor-adjusted network estimation and forecasting for high-dimensional time series. arXiv preprint arXiv:2201.06110.

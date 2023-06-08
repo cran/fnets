@@ -16,7 +16,7 @@ fnets.factor.model(
 )
 }
 \arguments{
-\item{x}{input time series matrix, with each row representing a variable}
+\item{x}{input time series matrix, with each row representing a variable and each column containing the observations at a given time}
 
 \item{center}{whether to de-mean the input \code{x} row-wise}
 
@@ -24,15 +24,16 @@ fnets.factor.model(
 
 \item{q}{Either a string specifying the factor number selection method when \code{fm.restricted = TRUE}; possible values are:
 \itemize{
-   \item{\code{"ic"}}{ information criteria of Hallin and Liška (2007) or Bai and Ng (2002), see \link[fnets]{factor.number}}
-   \item{\code{"er"}}{ eigenvalue ratio}
+   \item{\code{"ic"}}{ information criteria-based methods of Alessi, Barigozzi & Capasso (2010) when \code{fm.restricted = TRUE} or Hallin and Liška (2007) when \code{fm.restricted = FALSE}}
+   \item{\code{"er"}}{ eigenvalue ratio of Ahn and Horenstein (2013) when \code{fm.restricted = TRUE} or Avarucci et al. (2022) when \code{fm.restricted = FALSE}}
 }
-or the number of unrestricted factors.}
+or the number of unrestricted factors, see \link[fnets]{factor.number}}
 
 \item{ic.op}{choice of the information criterion penalty, see \link[fnets]{hl.factor.number} or \link[fnets]{abc.factor.number} for further details}
 
-\item{kern.bw}{kernel bandwidth for dynamic PCA; by default, it is set to
-\code{4 * floor((dim(x)[2]/log(dim(x)[2]))^(1/3)))}. When \code{fm.restricted = TRUE}, it is used to compute the number of lags for which autocovariance matrices are estimated}
+\item{kern.bw}{a positive integer specifying the kernel bandwidth for dynamic PCA;
+by default, it is set to \code{floor(4 *(dim(x)[2]/log(dim(x)[2]))^(1/3)))}.
+When \code{fm.restricted = TRUE}, it is used to compute the number of lags for which autocovariance matrices are estimated}
 
 \item{common.args}{a list specifying the tuning parameters required for estimating the impulse response functions and common shocks. It contains:
 \itemize{
@@ -60,22 +61,27 @@ See Barigozzi, Cho and Owens (2022) for further details.
 }
 \examples{
 \donttest{
-set.seed(123)
+set.seed(1234)
 n <- 500
 p <- 50
 common <- sim.restricted(n, p)
-x <- common$data + rnorm(n*p)
-out <- fnets.factor.model(x, fm.restricted = TRUE)
+x <- common$data + matrix(rnorm(n * p), nrow = p)
+out <- fnets.factor.model(x, fm.restricted = FALSE)
 }
 }
 \references{
+Ahn, S. C. & Horenstein, A. R. (2013) Eigenvalue ratio test for the number of factors. Econometrica, 81(3), 1203--1227.
+
 Alessi, L., Barigozzi, M.,  & Capasso, M. (2010) Improved penalization for determining the number of factors in approximate factor models. Statistics & Probability Letters, 80(23-24):1806–1813.
 
-Bai, J. & Ng, S. (2002) Determining the number of factors in approximate factor models. Econometrica. 70: 191-221.
+Avarucci, M., Cavicchioli, M., Forni, M., & Zaffaroni, P. (2022) The main business cycle shock(s): Frequency-band estimation of the number of dynamic factors.
 
 Barigozzi, M., Cho, H. & Owens, D. (2022) Factor-adjusted network estimation and forecasting for high-dimensional time series. arXiv preprint arXiv:2201.06110.
 
 Hallin, M. & Liška, R. (2007) Determining the number of factors in the general dynamic factor model. Journal of the American Statistical Association, 102(478), 603--617.
 
 Owens, D., Cho, H. & Barigozzi, M. (2022) fnets: An R Package for Network Estimation and Forecasting via Factor-Adjusted VAR Modelling. arXiv preprint arXiv:2301.11675.
+}
+\seealso{
+\link[fnets]{print.fm}, \link[fnets]{predict.fm}
 }

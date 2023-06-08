@@ -9,35 +9,34 @@ factor.number(
   fm.restricted = FALSE,
   method = c("ic", "er"),
   q.max = NULL,
-  do.plot = FALSE,
   center = TRUE
 )
 }
 \arguments{
-\item{x}{input time series matrix, with each row representing a variable}
+\item{x}{input time series matrix, with each row representing a variable and each column containing the observations at a given time}
 
 \item{fm.restricted}{whether to estimate the number of restricted or unrestricted factors}
 
 \item{method}{A string specifying the factor number selection method; possible values are:
 \itemize{
    \item{\code{"ic"}}{ information criteria-based methods of Alessi, Barigozzi & Capasso (2010) when \code{fm.restricted = TRUE} or Hallin and Liška (2007) when \code{fm.restricted = FALSE}}
-   \item{\code{"er"}}{ eigenvalue ratio of Ahn and Horenstein (2013)}
+   \item{\code{"er"}}{ eigenvalue ratio of Ahn and Horenstein (2013) when \code{fm.restricted = TRUE} or Avarucci et al. (2022) when \code{fm.restricted = FALSE}}
 }}
 
 \item{q.max}{maximum number of factors; if \code{q.max = NULL}, a default value is selected as \code{min(50, floor(sqrt(min(dim(x)[2] - 1, dim(x)[1]))))}}
 
-\item{do.plot}{whether to plot the information criteria values}
-
 \item{center}{whether to de-mean the input \code{x} row-wise}
 }
 \value{
-if \code{method = "ic"}, a vector containing minimisers of the six information criteria, otherwise, the maximiser of the eigenvalue ratio
+S3 object of class \code{factor.number}.
+If \code{method = "ic"}, a vector containing minimisers of the six information criteria, otherwise, the maximiser of the eigenvalue ratio
 }
 \description{
 Methods to estimate the number of factor.
 When \code{method = 'er'}, the factor number is estimated by maximising the ration of successive eigenvalues.
 When \code{method = 'ic'}, the information criterion-methods discussed in Hallin and Liška (2007) (when \code{fm.restricted = FALSE})
-and Alessi, Barigozzi and Capasso (2010) (when \code{fm.restricted = TRUE}) are implemented, with the information criterion called by \code{ic.op = 5} recommended by default.
+and Alessi, Barigozzi and Capasso (2010) (when \code{fm.restricted = TRUE}) are implemented.
+The information criterion called by \code{ic.op = 5} (as an argument to \code{fnets} or \code{fnets.factor.model}) is recommended by default.
 }
 \details{
 For further details, see references.
@@ -45,17 +44,7 @@ For further details, see references.
 \examples{
 library(fnets)
 
-set.seed(123)
-n <- 500
-p <- 50
-common <- sim.unrestricted(n, p)
-idio <- sim.var(n, p)
-x <- common$data * apply(idio$data, 1, sd) / apply(common$data, 1, sd) + idio$data
-
-hl <- factor.number(x, fm.restricted = FALSE, do.plot = TRUE)
-hl
-library(fnets)
-
+## Alessi, Barigozzi, and Capasso method for restricted models
 set.seed(123)
 n <- 500
 p <- 50
@@ -63,20 +52,38 @@ common <- sim.restricted(n, p)
 idio <- sim.var(n, p)
 x <- common$data * apply(idio$data, 1, sd) / apply(common$data, 1, sd) + idio$data
 
-abc <- factor.number(x, fm.restricted = TRUE, do.plot = TRUE)
-abc
+abc <- factor.number(x, fm.restricted = TRUE)
+print(abc)
+plot(abc)
 
-er <- factor.number(x, method = "er", fm.restricted = TRUE, do.plot = TRUE)
-er
+## Eigenvalue ratio method
+er <- factor.number(x, method = "er", fm.restricted = TRUE)
+print(er)
+plot(er)
+
+## Hallin and Liška method for unrestricted models
+set.seed(123)
+n <- 500
+p <- 50
+common <- sim.unrestricted(n, p)
+idio <- sim.var(n, p)
+x <- common$data * apply(idio$data, 1, sd) / apply(common$data, 1, sd) + idio$data
+
+hl <- factor.number(x, fm.restricted = FALSE)
+print(hl)
+plot(hl)
 }
 \references{
 Ahn, S. C. & Horenstein, A. R. (2013) Eigenvalue ratio test for the number of factors. Econometrica, 81(3), 1203--1227.
 
 Alessi, L., Barigozzi, M., and Capasso, M. (2010) Improved penalization for determining the number of factors in approximate factor models. Statistics & Probability Letters, 80(23-24):1806–1813.
 
-Bai, J. & Ng, S. (2002) Determining the number of factors in approximate factor models. Econometrica. 70: 191-221.
+Avarucci, M., Cavicchioli, M., Forni, M., & Zaffaroni, P. (2022) The main business cycle shock(s): Frequency-band estimation of the number of dynamic factors.
 
 Hallin, M. & Liška, R. (2007) Determining the number of factors in the general dynamic factor model. Journal of the American Statistical Association, 102(478), 603--617.
 
 Owens, D., Cho, H. & Barigozzi, M. (2022) fnets: An R Package for Network Estimation and Forecasting via Factor-Adjusted VAR Modelling. arXiv preprint arXiv:2301.11675.
+}
+\seealso{
+\link[fnets]{plot.factor.number}, \link[fnets]{print.factor.number}
 }

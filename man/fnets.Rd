@@ -20,11 +20,11 @@ fnets(
   do.lrpc = TRUE,
   lrpc.adaptive = FALSE,
   tuning.args = list(tuning = c("cv", "bic"), n.folds = 1, penalty = NULL, path.length
-    = 10, do.plot = FALSE)
+    = 10)
 )
 }
 \arguments{
-\item{x}{input time series matrix, with each row representing a variable}
+\item{x}{input time series matrix, with each row representing a variable and each column containing the observations at a given time}
 
 \item{center}{whether to de-mean the input \code{x} row-wise}
 
@@ -32,8 +32,8 @@ fnets(
 
 \item{q}{Either the number of factors or a string specifying the factor number selection method; possible values are:
 \itemize{
-   \item{\code{"ic"}}{ information criteria-based methods of Alessi, Barigozzi & Capasso (2010) when \code{fm.restricted = TRUE} or Hallin and Liška (2007) when \code{fm.restricted = FALSE} modifying Bai and Ng (2002)}
-   \item{\code{"er"}}{ eigenvalue ratio of Ahn and Horenstein (2013)}
+   \item{\code{"ic"}}{ information criteria-based methods of Alessi, Barigozzi & Capasso (2010) when \code{fm.restricted = TRUE} or Hallin and Liška (2007) when \code{fm.restricted = FALSE}}
+   \item{\code{"er"}}{ eigenvalue ratio of Ahn and Horenstein (2013) when \code{fm.restricted = TRUE} or Avarucci et al. (2022) when \code{fm.restricted = FALSE}}
 }
 see \link[fnets]{factor.number}.}
 
@@ -80,7 +80,6 @@ for selecting the tuning parameters involved in VAR parameter and (long-run) par
    \item{\code{n.folds}}{ if \code{tuning = "cv"}, positive integer number of folds}
    \item{\code{penalty}}{ if \code{tuning = "bic"}, penalty multiplier between 0 and 1; if \code{penalty = NULL}, it is set to \code{1/(1+exp(dim(x)[1])/dim(x)[2]))}} by default
    \item{\code{path.length}}{ positive integer number of regularisation parameter values to consider; a sequence is generated automatically based in this value}
-   \item{\code{do.plot}}{ whether to plot the output of the cross validation step}
 }}
 }
 \value{
@@ -105,7 +104,7 @@ a list containing estimators of the impulse response functions (as an array of d
 \item{kern.bw}{ input parameter}
 }
 \description{
-Operating under a factor-adjusted vector autoregressive (VAR) model,
+Under a factor-adjusted vector autoregressive (VAR) model,
 the function estimates the spectral density and autocovariance matrices of the factor-driven common component and the idiosyncratic VAR process,
 the impulse response functions and common shocks for the common component,
 and VAR parameters, innovation covariance matrix and long-run partial correlations for the idiosyncratic component.
@@ -123,11 +122,10 @@ common <- sim.unrestricted(n, p)
 idio <- sim.var(n, p)
 x <- common$data + idio$data
 out <- fnets(x,
-  q = NULL, var.order = 1, var.method = "lasso", do.threshold = TRUE,
-  do.lrpc = TRUE, tuning.args = list(tuning = "cv", n.folds = 1, path.length = 10, do.plot = TRUE),
+  do.threshold = TRUE,
   var.args = list(n.cores = 2)
 )
-pre <- predict(out, x, h = 1, common.method = "unrestricted")
+pre <- predict(out, common.method = "unrestricted")
 plot(out, type = "granger", display = "network")
 plot(out, type = "lrpc", display = "heatmap")
 }
@@ -137,7 +135,7 @@ Ahn, S. C. & Horenstein, A. R. (2013) Eigenvalue ratio test for the number of fa
 
 Alessi, L., Barigozzi, M.,  & Capasso, M. (2010) Improved penalization for determining the number of factors in approximate factor models. Statistics & Probability Letters, 80(23-24):1806–1813.
 
-Bai, J. & Ng, S. (2002) Determining the number of factors in approximate factor models. Econometrica. 70: 191-221.
+Avarucci, M., Cavicchioli, M., Forni, M., & Zaffaroni, P. (2022) The main business cycle shock(s): Frequency-band estimation of the number of dynamic factors.
 
 Barigozzi, M., Cho, H. & Owens, D. (2022) FNETS: Factor-adjusted network estimation and forecasting for high-dimensional time series. arXiv preprint arXiv:2201.06110.
 
@@ -146,5 +144,5 @@ Hallin, M. & Liška, R. (2007) Determining the number of factors in the general 
 Owens, D., Cho, H. & Barigozzi, M. (2022) fnets: An R Package for Network Estimation and Forecasting via Factor-Adjusted VAR Modelling. arXiv preprint arXiv:2301.11675.
 }
 \seealso{
-\link[fnets]{predict.fnets}, \link[fnets]{plot.fnets}
+\link[fnets]{predict.fnets}, \link[fnets]{plot.fnets}, \link[fnets]{print.fnets}
 }

@@ -2,14 +2,25 @@
 
 Contains methods for network estimation and forecasting for high-dimensional time series under a factor-adjusted VAR model. See 
 
+> _fnets_: An R Package for Network Estimation and Forecasting via Factor-Adjusted VAR Modelling
+
+by Dom Owens, Haeran Cho and Matteo Barigozzi [arXiv:2301.11675](https://arxiv.org/abs/2301.11675) accompanying the R package, and
+
 > _FNETS_: Factor-adjusted network estimation and forecasting for high-dimensional time series
 
-by Matteo Barigozzi, Haeran Cho and Dom Owens [arXiv:2201.06110](https://arxiv.org/abs/2201.06110) for full details.
+by Matteo Barigozzi, Haeran Cho and Dom Owens [arXiv:2201.06110](https://arxiv.org/abs/2201.06110) for details of the methodology.
 
 
 ## Installation
 
-To install `fnets` from GitHub:
+To install `fnets` from CRAN:
+
+```
+install.packages("fnets")
+```
+
+
+To install from GitHub:
 
 ```
 devtools::install_github("https://github.com/Dom-Owens-UoB/fnets")
@@ -29,8 +40,9 @@ x <- common$data + idio$data
 
 Fit a factor-adjusted VAR model with `q = 2` factors and `lasso` for VAR transition matrix estimation
 ```
-out <- fnets(x, q = 2, idio.var.order = 1, idio.method = "lasso", lrpc.method = "none")
+out <- fnets(x, q = 2, var.order = 1, var.method = "lasso", do.lrpc = FALSE)
 ```
+
 Plot the Granger network induced by the estimated VAR transition matrices:
 ```
 plot(out, type = "granger", display = "network")
@@ -38,20 +50,20 @@ plot(out, type = "granger", display = "network")
 
 Estimate and plot the partial-correlation and long-run partial correlation-based networks:
 ```
-plrpc <- par.lrpc(out, x)
+plrpc <- par.lrpc(out)
 out$lrpc <- plrpc
 out$lrpc.method <- 'par'
 plot(out, type = "lrpc", display = "heatmap")
 ```
 
-Of course, we can estimate the (long-run) partial correlation-based networks directly using `fnets`:
+Estimate the (long-run) partial correlation-based networks directly using `fnets`:
 ```
-out <- fnets(x, q = 2, idio.var.order = 1, idio.method = "lasso", lrpc.method = "par")
+out <- fnets(x, q = 2, var.order = 1, var.method = "lasso", do.lrpc = TRUE)
 ```
 
-Perform h-step ahead forecasting
+Forecast `n.ahead` steps:
 ```
-pr <- predict(out, x, h = 1, common.method = "restricted")
+pr <- predict(out, n.ahead = 1, common.method = "restricted")
 pr$forecast
 ```
 
