@@ -27,13 +27,7 @@
 #' @references Owens, D., Cho, H. & Barigozzi, M. (2022) fnets: An R Package for Network Estimation and Forecasting via Factor-Adjusted VAR Modelling. arXiv preprint arXiv:2301.11675.
 #' @examples
 #' \donttest{
-#' set.seed(123)
-#' n <- 500
-#' p <- 50
-#' common <- sim.unrestricted(n, p)
-#' idio <- sim.var(n, p)
-#' x <- common$data + idio$data
-#' out <- fnets(x, do.lrpc = FALSE, var.args = list(n.cores = 2))
+#' out <- fnets(data.unrestricted, do.lrpc = FALSE, var.args = list(n.cores = 2))
 #' plrpc <- par.lrpc(out, n.cores = 2)
 #' out$lrpc <- plrpc
 #' out$do.lrpc <- TRUE
@@ -50,14 +44,14 @@ par.lrpc <- function(object,
                      eta.adaptive = NULL,
                      do.correct = TRUE,
                      do.threshold = FALSE,
-                     n.cores = min(parallel::detectCores() - 1, 3)) {
+                     n.cores = 1) {
   is.var <- FALSE
   p <- dim(object$acv$Gamma_x)[1]
   if(is.null(p)) {
     p <- dim(object$beta)[2]
     is.var <- TRUE
   }
-  x <- as.matrix(attr(object, "args")$x)
+  x <- t(as.matrix(attr(object, "args")$x))
   xx <- x - object$mean.x
   n <- dim(x)[2]
 
@@ -157,7 +151,7 @@ direct.cv <-
            path.length = 10,
            q = 0,
            kern.bw = NULL,
-           n.cores = min(parallel::detectCores() - 1, 3),
+           n.cores = 1,
            lrpc.adaptive = FALSE,
            eta.adaptive = NULL,
            is.var = FALSE) {
@@ -264,7 +258,7 @@ direct.inv.est <-
            eta = NULL,
            symmetric = c("min", "max", "avg", "none"),
            do.correct = FALSE,
-           n.cores = min(parallel::detectCores() - 1, 3)) {
+           n.cores = 1) {
     p <- dim(GG)[1]
     f.obj <- rep(1, 2 * p)
     f.con <- rbind(-GG, GG)
@@ -314,7 +308,7 @@ adaptive.direct.inv.est <-
            eta.adaptive = NULL,
            symmetric = c("min", "max", "avg", "none"),
            do.correct = FALSE,
-           n.cores = min(parallel::detectCores() - 1, 3)) {
+           n.cores = 1) {
     p <- dim(GG)[1]
     f.obj <- rep(1, 2 * p)
     GG.n <- GG + diag(1 / n, p) # add ridge

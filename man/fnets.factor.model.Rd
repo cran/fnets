@@ -16,9 +16,9 @@ fnets.factor.model(
 )
 }
 \arguments{
-\item{x}{input time series matrix, with each row representing a variable and each column containing the observations at a given time}
+\item{x}{input time series each column representing a time series variable; it is coerced into a \link[stats]{ts} object}
 
-\item{center}{whether to de-mean the input \code{x} row-wise}
+\item{center}{whether to de-mean the input \code{x}}
 
 \item{fm.restricted}{whether to estimate a restricted factor model using static PCA}
 
@@ -61,12 +61,7 @@ See Barigozzi, Cho and Owens (2022) for further details.
 }
 \examples{
 \donttest{
-set.seed(1234)
-n <- 500
-p <- 50
-common <- sim.restricted(n, p)
-x <- common$data + matrix(rnorm(n * p), nrow = p)
-out <- fnets.factor.model(x, fm.restricted = FALSE)
+out <- fnets.factor.model(data.restricted, fm.restricted = TRUE)
 }
 }
 \references{

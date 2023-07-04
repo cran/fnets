@@ -15,7 +15,7 @@ fnets(
     n.perm = 10),
   var.order = 1,
   var.method = c("lasso", "ds"),
-  var.args = list(n.iter = NULL, n.cores = min(parallel::detectCores() - 1, 3)),
+  var.args = list(n.iter = NULL, n.cores = 1),
   do.threshold = FALSE,
   do.lrpc = TRUE,
   lrpc.adaptive = FALSE,
@@ -24,9 +24,9 @@ fnets(
 )
 }
 \arguments{
-\item{x}{input time series matrix, with each row representing a variable and each column containing the observations at a given time}
+\item{x}{input time series each column representing a time series variable; it is coerced into a \link[stats]{ts} object}
 
-\item{center}{whether to de-mean the input \code{x} row-wise}
+\item{center}{whether to de-mean the input \code{x}}
 
 \item{fm.restricted}{whether to estimate a restricted factor model using static PCA}
 
@@ -115,13 +115,7 @@ List arguments do not need to be specified with all list components; any missing
 }
 \examples{
 \donttest{
-set.seed(123)
-n <- 500
-p <- 50
-common <- sim.unrestricted(n, p)
-idio <- sim.var(n, p)
-x <- common$data + idio$data
-out <- fnets(x,
+out <- fnets(data.unrestricted,
   do.threshold = TRUE,
   var.args = list(n.cores = 2)
 )

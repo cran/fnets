@@ -6,8 +6,8 @@
 #' @details See Barigozzi, Cho and Owens (2022) and Owens, Cho and Barigozzi (2022) for further details.
 #' List arguments do not need to be specified with all list components; any missing entries will be filled in with the default argument.
 #'
-#' @param x input time series matrix, with each row representing a variable and each column containing the observations at a given time
-#' @param center whether to de-mean the input \code{x} row-wise
+#' @param x input time series each column representing a time series variable; it is coerced into a \link[stats]{ts} object
+#' @param center whether to de-mean the input \code{x}
 #' @param fm.restricted whether to estimate a restricted factor model using static PCA
 #' @param q Either the number of factors or a string specifying the factor number selection method; possible values are:
 #' \itemize{
@@ -78,13 +78,7 @@
 #' @references Owens, D., Cho, H. & Barigozzi, M. (2022) fnets: An R Package for Network Estimation and Forecasting via Factor-Adjusted VAR Modelling. arXiv preprint arXiv:2301.11675.
 #' @examples
 #' \donttest{
-#' set.seed(123)
-#' n <- 500
-#' p <- 50
-#' common <- sim.unrestricted(n, p)
-#' idio <- sim.var(n, p)
-#' x <- common$data + idio$data
-#' out <- fnets(x,
+#' out <- fnets(data.unrestricted,
 #'   do.threshold = TRUE,
 #'   var.args = list(n.cores = 2)
 #' )
@@ -93,6 +87,7 @@
 #' plot(out, type = "lrpc", display = "heatmap")
 #' }
 #' @seealso \link[fnets]{predict.fnets}, \link[fnets]{plot.fnets}, \link[fnets]{print.fnets}
+#' @importFrom stats as.ts
 #' @export
 fnets <-
   function(x,
@@ -111,7 +106,7 @@ fnets <-
            var.method = c("lasso", "ds"),
            var.args = list(
              n.iter = NULL,
-             n.cores = min(parallel::detectCores() - 1, 3)
+             n.cores = 1
            ),
            do.threshold = FALSE,
            do.lrpc = TRUE,
@@ -122,7 +117,7 @@ fnets <-
              penalty = NULL,
              path.length = 10
            )) {
-  x <- as.matrix(x)
+  x <- t(as.ts(x))
   p <- dim(x)[1]
   n <- dim(x)[2]
 
@@ -143,6 +138,7 @@ fnets <-
   tuning <- match.arg(tuning.args$tuning, c("cv", "bic"))
 
   args <- as.list(environment())
+  args$x <- t(args$x)
 
   ifelse(center, mean.x <- apply(x, 1, mean), mean.x <- rep(0, p))
   xx <- x - mean.x
@@ -150,7 +146,7 @@ fnets <-
   if(!fm.restricted & is.null(kern.bw))
     kern.bw <-  floor(4 * (n / log(n))^(1/3))
 
-  fm <- fnets.factor.model(xx,
+  fm <- fnets.factor.model(t(xx),
                            center = FALSE,
                            fm.restricted = fm.restricted,
                            q = q,
@@ -331,13 +327,7 @@ network <- function (object, ...) UseMethod("network", object)
 #' @seealso \link[fnets]{fnets}, \link[fnets]{plot.fnets}
 #' @examples
 #' \donttest{
-#' set.seed(123)
-#' n <- 500
-#' p <- 50
-#' common <- sim.unrestricted(n, p)
-#' idio <- sim.var(n, p)
-#' x <- common$data + idio$data
-#' out <- fnets(x,
+#' out <- fnets(data.unrestricted,
 #'   do.threshold = TRUE,
 #'   var.args = list(n.cores = 2)
 #' )
@@ -415,18 +405,12 @@ network.fnets <- function(object,
 #' @seealso \link[fnets]{fnets}
 #' @examples
 #' \donttest{
-#' set.seed(123)
-#' n <- 500
-#' p <- 50
-#' common <- sim.unrestricted(n, p)
-#' idio <- sim.var(n, p)
-#' x <- common$data + idio$data
-#' out <- fnets(x,
+#' out <- fnets(data.unrestricted,
 #'   do.threshold = TRUE,
 #'   var.args = list(n.cores = 2)
 #' )
 #' plot(out, type = "granger", display = "network",
-#' groups = rep(c(1,2), p/2), group.colours = c("orange","blue"))
+#' groups = rep(c(1,2), 50/2), group.colours = c("orange","blue"))
 #' plot(out, type = "lrpc", display = "heatmap")
 #' plot(out, display = "tuning")
 #' }
@@ -545,7 +529,7 @@ plot.fnets <-
 #' @description Produces forecasts of the data for a given forecasting horizon by
 #' separately estimating the best linear predictors of common and idiosyncratic components
 #' @param object \code{fnets} object
-#' @param newdata input time series matrix, with each row representing a variable; by default, uses input to \code{object}.
+#' @param newdata input time series matrix; by default, uses input to \code{object}.
 #' Valid only for the case where \code{newdata} is modelled as a VAR process without any factors
 #' @param n.ahead forecasting horizon
 #' @param fc.restricted whether to forecast using a restricted or unrestricted, blockwise VAR representation of the common component
@@ -563,16 +547,10 @@ plot.fnets <-
 #' \item{mean.x}{ \code{mean.x} argument from \code{object}}
 #' @seealso \link[fnets]{fnets}
 #' @examples
-#' set.seed(123)
-#' n <- 500
-#' p <- 50
-#' common <- sim.restricted(n, p)
-#' idio <- sim.var(n, p)
-#' x <- common$data + idio$data
-#' out <- fnets(x, q = 2,
-#' do.lrpc = FALSE, var.args = list(n.cores = 2))
+#' out <- fnets(data.restricted, q = 2, do.lrpc = FALSE, var.args = list(n.cores = 2))
 #' pre.unr <- predict(out, fc.restricted = FALSE)
 #' pre.res <- predict(out, fc.restricted = TRUE)
+#' @importFrom stats as.ts
 #' @export
 predict.fnets <-
   function(object,
@@ -586,14 +564,15 @@ predict.fnets <-
   } else if (object$q >= 1) {
     stop("To produce forecasts when a common component is present, estimate a model on the new data. \n")
   }
+  newdata <- as.ts(newdata)
 
   n.ahead <- posint(n.ahead)
-  if(ncol(newdata) < n.ahead){
-    n.ahead <- ncol(newdata)
+  if(nrow(newdata) < n.ahead){
+    n.ahead <- nrow(newdata)
     warning("Forecast horizon restricted by number of observations")
   }
-  cpre <- common.predict(object, newdata, n.ahead, fc.restricted, r)
-  ipre <- idio.predict(object, newdata, cpre, n.ahead)
+  cpre <- common.predict(object, t(newdata), n.ahead, fc.restricted, r)
+  ipre <- idio.predict(object, t(newdata), cpre, n.ahead)
 
   out <- list(
     forecast = cpre$fc + ipre$fc,
@@ -612,16 +591,10 @@ predict.fnets <-
 #' @return NULL, printed to console
 #' @seealso \link[fnets]{fnets}
 #' @examples \donttest{
-#' set.seed(123)
-#' n <- 500
-#' p <- 50
-#' common <- sim.restricted(n, p)
-#' idio <- sim.var(n, p)
-#' x <- common$data + idio$data
-#' out <- fnets(x, q = 2,
+#' out <- fnets(data.restricted, q = 2,
 #' do.lrpc = FALSE, var.args = list(n.cores = 2))
 #' print(out)
-#' x <- idio$data
+#' x <- sim.var(500, 50)$data
 #' out <- fnets.var(x,
 #' n.cores = 2)
 #' print(out)

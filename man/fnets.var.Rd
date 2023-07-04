@@ -15,13 +15,13 @@ fnets.var(
   do.threshold = FALSE,
   n.iter = NULL,
   tol = 0,
-  n.cores = min(parallel::detectCores() - 1, 3)
+  n.cores = 1
 )
 }
 \arguments{
-\item{x}{input time series matrix, with each row representing a variable and each column containing the observations at a given time}
+\item{x}{input time series each column representing a time series variable; it is coerced into a \link[stats]{ts} object}
 
-\item{center}{whether to de-mean the input \code{x} row-wise}
+\item{center}{whether to de-mean the input \code{x}}
 
 \item{method}{a string specifying the method to be adopted for VAR process estimation; possible values are:
 \itemize{
